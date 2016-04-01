@@ -8,7 +8,7 @@ Run `python train.py` from the command line to train from scratch and experiment
 
 `sampler.py` can be used inside IPython to interactively see results from the models being trained.
 
-See my blog post at [blog.otoro.net](http://blog.otoro.net/2016/04/01/generating-abstract-patterns-with-tensorflow/) for more details.
+See my blog post at [blog.otoro.net](http://blog.otoro.net/2016/04/01/generating-large-images-from-latent-vectors/) for more details.
 
 I tested the implementation on TensorFlow 0.60.
 
