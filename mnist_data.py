@@ -5,8 +5,10 @@ modified for the purpose of cppgan demo
 import gzip
 import os
 import urllib
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+
 SOURCE_URL = 'http://yann.lecun.com/exdb/mnist/'
 def maybe_download(filename, work_directory):
   """Download the data from Yann's website, unless it's already here."""
@@ -33,9 +35,10 @@ def extract_images(filename):
     num_images = _read32(bytestream)
     rows = _read32(bytestream)
     cols = _read32(bytestream)
-    buf = bytestream.read(rows * cols * num_images)
+    print(num_images, rows, cols)
+    buf = bytestream.read(rows[0] * cols[0] * num_images[0])  #@look
     data = np.frombuffer(buf, dtype=np.uint8)
-    data = data.reshape(num_images, rows, cols, 1)
+    data = data.reshape(num_images[0], rows[0], cols[0], 1)
     return data
 def dense_to_one_hot(labels_dense, num_classes=10):
   """Convert class labels from scalars to one-hot vectors."""
@@ -54,8 +57,8 @@ def extract_labels(filename, one_hot=False):
           'Invalid magic number %d in MNIST label file: %s' %
           (magic, filename))
     num_items = _read32(bytestream)
-    buf = bytestream.read(num_items)
-    labels = np.frombuffer(buf, dtype=np.uint8)
+    buf = bytestream.read(num_items[0]) # @look - https://stackoverflow.com/questions/50997928/typeerror-only-integer-scalar-arrays-can-be-converted-to-a-scalar-index-with-1d
+    labels = np.frombuffer(buf, dtype=np.uint8)  
     if one_hot:
       return dense_to_one_hot(labels)
     return labels
@@ -146,4 +149,3 @@ def read_data_sets(train_dir = 'MNIST_data', one_hot=False):
   #data_sets = DataSet(all_images, all_labels) # train on all train+test sets 70k
   data_sets = DataSet(train_images, train_labels) # train only only train set 60k
   return data_sets
-

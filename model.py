@@ -1,7 +1,9 @@
 import os
 import time
+
 import numpy as np
 import tensorflow as tf
+
 from ops import *
 
 '''
@@ -93,7 +95,7 @@ class CPPNVAE():
     # Draw one sample z from Gaussian distribution
     eps = tf.random_normal((self.batch_size, self.z_dim), 0, 1, dtype=tf.float32)
     # z = mu + sigma*epsilon
-    self.z = tf.add(self.z_mean, tf.mul(tf.sqrt(tf.exp(self.z_log_sigma_sq)), eps))
+    self.z = tf.add(self.z_mean, tf.multiply(tf.sqrt(tf.exp(self.z_log_sigma_sq)), eps))
 
     # Use generator to determine mean of
     # Bernoulli distribution of reconstructed input
@@ -116,20 +118,24 @@ class CPPNVAE():
     self.vae_vars = self.q_vars+self.g_vars
 
     # Use ADAM optimizer
-    self.d_opt = tf.train.AdamOptimizer(self.learning_rate_d, beta1=self.beta1) \
-                      .minimize(self.d_loss, var_list=self.d_vars)
-    self.g_opt = tf.train.AdamOptimizer(self.learning_rate, beta1=self.beta1) \
-                      .minimize(self.balanced_loss, var_list=self.vae_vars)
-    self.vae_opt = tf.train.AdamOptimizer(self.learning_rate_vae, beta1=self.beta1) \
-                      .minimize(self.vae_loss, var_list=self.vae_vars)
+    with tf.variable_scope(self.model_name+'_opt', reuse=tf.AUTO_REUSE) as scope:
+      self.d_opt = tf.train.AdamOptimizer(self.learning_rate_d, beta1=self.beta1) \
+                        .minimize(self.d_loss, var_list=self.d_vars)
+      self.g_opt = tf.train.AdamOptimizer(self.learning_rate, beta1=self.beta1) \
+                        .minimize(self.balanced_loss, var_list=self.vae_vars)
+      self.vae_opt = tf.train.AdamOptimizer(self.learning_rate_vae, beta1=self.beta1) \
+                        .minimize(self.vae_loss, var_list=self.vae_vars)
 
-    # Initializing the tensor flow variables
-    init = tf.initialize_all_variables()
-
+    
+    
     # Launch the session
     self.sess = tf.InteractiveSession()
-    self.sess.run(init)
-    self.saver = tf.train.Saver(tf.all_variables())
+    self.sess.run(tf.variables_initializer(all_variables))
+
+    self.all_vars = tf.get_collection_ref(tf.GraphKeys.GLOBAL_VARIABLES)
+    self.trainable_vars = [v for v in self.all_vars if 'beta1_power' not in v.name and 'beta2_power' not in v.name]
+    
+    self.saver = tf.train.Saver(var_list=self.trainable_vars, max_to_keep=50)
 
   def create_vae_loss_terms(self):
     # The loss is composed of two terms:
@@ -191,8 +197,8 @@ class CPPNVAE():
     # Generate probabilistic encoder (recognition network), which
     # maps inputs onto a normal distribution in latent space.
     # The transformation is parametrized and can be learned.
-    H1 = tf.nn.dropout(tf.nn.softplus(linear(self.batch_flatten, self.net_size_q, self.model_name+'_q_lin1')), self.keep_prob)
-    H2 = tf.nn.dropout(tf.nn.softplus(linear(H1, self.net_size_q, self.model_name+'_q_lin2')), self.keep_prob)
+    H1 = tf.nn.dropout(tf.nn.softplus(linear(self.batch_flatten, self.net_size_q, self.model_name+'_q_lin1')), rate = 1 - self.keep_prob)
+    H2 = tf.nn.dropout(tf.nn.softplus(linear(H1, self.net_size_q, self.model_name+'_q_lin2')), rate = 1 - self.keep_prob))
     z_mean = linear(H2, self.z_dim, self.model_name+'_q_lin3_mean')
     z_log_sigma_sq = linear(H2, self.z_dim, self.model_name+'_q_lin3_log_sigma_sq')
     return (z_mean, z_log_sigma_sq)
@@ -315,14 +321,21 @@ class CPPNVAE():
     """ saves the model to a file """
     self.saver.save(self.sess, checkpoint_path, global_step = epoch)
 
-  def load_model(self, checkpoint_path):
+  def load_model(self, checkpoint_path, model_version_to_load=None):
 
     ckpt = tf.train.get_checkpoint_state(checkpoint_path)
-    print "loading model: ",ckpt.model_checkpoint_path
+    print("found model: ", ckpt)  # @look: TODO support alt checkpoint paths?
 
-    self.saver.restore(self.sess, checkpoint_path+'/'+ckpt.model_checkpoint_path)
+    model_checkpoint_path = ckpt.model_checkpoint_path
+
+    if model_version_to_load:
+      if model_version_to_load not in ckpt.all_model_checkpoint_paths:
+        raise Exception("error, please request one of: %s" % ckpt.all_model_checkpoint_paths)
+      model_checkpoint_path = model_version_to_load
+
     # use the below line for tensorflow 0.7
-    #self.saver.restore(self.sess, ckpt.model_checkpoint_path)
+    print("loading model checkpoint: ", model_checkpoint_path)  # @look: TODO support alt checkpoint paths?
+    self.saver.restore(self.sess, model_checkpoint_path)
 
   def close(self):
     self.sess.close()

@@ -1,7 +1,7 @@
 import math
+
 import numpy as np
 import tensorflow as tf
-
 from tensorflow.python.framework import ops
 
 #from utils import *
@@ -9,7 +9,7 @@ from tensorflow.python.framework import ops
 class batch_norm(object):
     """Code modification of http://stackoverflow.com/a/33950177"""
     def __init__(self, batch_size, epsilon=1e-5, momentum = 0.1, name="batch_norm"):
-        with tf.variable_scope(name) as scope:
+        with tf.variable_scope(name, reuse=tf.AUTO_REUSE) as scope:
             self.epsilon = epsilon
             self.momentum = momentum
             self.batch_size = batch_size
@@ -20,7 +20,7 @@ class batch_norm(object):
     def __call__(self, x, train=True):
         shape = x.get_shape().as_list()
 
-        with tf.variable_scope(self.name) as scope:
+        with tf.variable_scope(self.name, reuse=tf.AUTO_REUSE) as scope:
             self.gamma = tf.get_variable("gamma", [shape[-1]],
                                 initializer=tf.random_normal_initializer(1., 0.02))
             self.beta = tf.get_variable("beta", [shape[-1]],
@@ -59,7 +59,7 @@ def conv_cond_concat(x, y):
 def conv2d(input_, output_dim,
            k_h=5, k_w=5, d_h=2, d_w=2, stddev=0.02,
            name="conv2d"):
-    with tf.variable_scope(name):
+    with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
         w = tf.get_variable('w', [k_h, k_w, input_.get_shape()[-1], output_dim],
                             initializer=tf.truncated_normal_initializer(stddev=stddev))
         conv = tf.nn.conv2d(input_, w, strides=[1, d_h, d_w, 1], padding='SAME')
@@ -72,7 +72,7 @@ def conv2d(input_, output_dim,
 def deconv2d(input_, output_shape,
              k_h=5, k_w=5, d_h=2, d_w=2, stddev=0.02,
              name="deconv2d", with_w=False):
-    with tf.variable_scope(name):
+    with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
         # filter : [height, width, output_channels, in_channels]
         w = tf.get_variable('w', [k_h, k_h, output_shape[-1], input_.get_shape()[-1]],
                             initializer=tf.random_normal_initializer(stddev=stddev))
@@ -88,7 +88,7 @@ def deconv2d(input_, output_shape,
             return deconv
 
 def lrelu(x, leak=0.2, name="lrelu"):
-    with tf.variable_scope(name):
+    with tf.variable_scope(name, reuse=tf.AUTO_REUSE):
         f1 = 0.5 * (1 + leak)
         f2 = 0.5 * (1 - leak)
         return f1 * x + f2 * abs(x)
@@ -96,7 +96,7 @@ def lrelu(x, leak=0.2, name="lrelu"):
 def linear(input_, output_size, scope=None, stddev=0.02, bias_start=0.0, with_w=False):
     shape = input_.get_shape().as_list()
 
-    with tf.variable_scope(scope or "Linear"):
+    with tf.variable_scope(scope or "Linear", reuse=tf.AUTO_REUSE):
         matrix = tf.get_variable("Matrix", [shape[1], output_size], tf.float32,
                                  tf.random_normal_initializer(stddev=stddev))
         bias = tf.get_variable("bias", [output_size],
@@ -109,7 +109,7 @@ def linear(input_, output_size, scope=None, stddev=0.02, bias_start=0.0, with_w=
 def fully_connected(input_, output_size, scope=None, stddev=0.1, with_bias = True):
     shape = input_.get_shape().as_list()
 
-    with tf.variable_scope(scope or "FC"):
+    with tf.variable_scope(scope or "FC", reuse=tf.AUTO_REUSE):
         matrix = tf.get_variable("Matrix", [shape[1], output_size], tf.float32,
             tf.random_normal_initializer(stddev=stddev))
 
