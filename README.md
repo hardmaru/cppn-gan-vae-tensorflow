@@ -1,3 +1,14 @@
+# setup
+
+Note: for matplotlib to work, use python standardlib [venv](https://matplotlib.org/3.1.0/faq/osx_framework.html) instead of "virtualenv".
+
+```sh
+python3 -m venv ./venv3
+source ./venv3/bin/activate
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+```
+
 # cppn-gan-vae tensorflow
 
 Train [Compositional Pattern Producing Network](https://en.wikipedia.org/wiki/Compositional_pattern-producing_network) as a Generative Model, using Generative Adversarial Networks and Variational Autoencoder techniques to produce high resolution images.
