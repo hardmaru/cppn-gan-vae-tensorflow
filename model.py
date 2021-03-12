@@ -318,7 +318,7 @@ class CPPNVAE():
     return image
 
   def save_model(self, checkpoint_path, epoch):
-    """ saves the model to a file """
+    """ saves the model to a file. """
     self.saver.save(self.sess, checkpoint_path, global_step = epoch)
 
   def load_model(self, checkpoint_path, model_version_to_load=None):
