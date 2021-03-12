@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 from six.moves import cPickle
 
-from dataset import *
+import dataset
 from model import CPPNVAE
 
 """
@@ -42,9 +42,15 @@ parser.add_argument(
     "--beta1", type=float, default=0.65, help="adam momentum param for descriminator"
 )
 parser.add_argument(
-    "--dirname",
+    "--save_dir",
     type=string,
-    default="save",
+    default=dataset.SAVE_MNIST,
+    help="output dir for model checkpoint files",
+)
+parser.add_argument(
+    "--data_dir",
+    type=string,
+    default=dataset.DIR_MNIST,
     help="output dir for model checkpoint files",
 )
 
@@ -60,7 +66,7 @@ usage (in jupyter):
 ```
   from train import parser, train
 
-  args = parser.parse_args("--dirname save-job-001".split())
+  args = parser.parse_args("--save_dir save-job-001".split())
   train(args)
 ```
 """
@@ -78,15 +84,18 @@ def train(args):
     )  # save training results every check point step
     beta1 = args.beta1
     keep_prob = args.keep_prob
-    dirname = args.dirname
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
 
-    with open(os.path.join(dirname, "config.pkl"), "w") as f:
+    data_dir = args.data_dir
+
+    save_dir = args.save_dir
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    with open(os.path.join(save_dir, "config.pkl"), "w") as f:
         cPickle.dump(args, f)
+    checkpoint_path = os.path.join(save_dir, "model.ckpt")
 
-    mnist = read_data_sets()
-    n_samples = mnist.num_examples
+    mnist_dataset = dataset.read_data_sets(train_dir=data_dir)
+    n_samples = mnist_dataset.num_examples
 
     cppnvae = CPPNVAE(
         batch_size=batch_size,
@@ -98,9 +107,9 @@ def train(args):
     )
 
     # load previously trained model if appilcable
-    ckpt = tf.train.get_checkpoint_state(dirname)
+    ckpt = tf.train.get_checkpoint_state(save_dir)
     if ckpt:
-        cppnvae.load_model(dirname)
+        cppnvae.load_model(save_dir)
 
     counter = 0
 
@@ -109,11 +118,11 @@ def train(args):
         avg_d_loss = 0.0
         avg_q_loss = 0.0
         avg_vae_loss = 0.0
-        mnist.shuffle_data()
+        mnist_dataset.shuffle_data()
         total_batch = int(n_samples / batch_size)
         # Loop over all batches
         for i in range(total_batch):
-            batch_images = mnist.next_batch(batch_size)
+            batch_images = mnist_dataset.next_batch(batch_size)
 
             d_loss, g_loss, vae_loss, n_operations = cppnvae.partial_train(batch_images)
 
@@ -158,7 +167,6 @@ def train(args):
 
         # save model
         if epoch >= 0 and epoch % checkpoint_step == 0:
-            checkpoint_path = os.path.join("save", "model.ckpt")
             cppnvae.save_model(checkpoint_path, epoch)
             print("model saved to {}".format(checkpoint_path))
 

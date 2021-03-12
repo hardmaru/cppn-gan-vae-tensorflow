@@ -35,8 +35,8 @@ import pylab
 import tensorflow as tf
 from PIL import Image
 
+import dataset
 import images2gif
-from images2gif import writeGif
 from model import CPPNVAE
 
 mgc = get_ipython().magic
@@ -46,11 +46,12 @@ pylab.rcParams["figure.figsize"] = (10.0, 10.0)
 
 
 class Sampler:
-    def __init__(self, model, dataset=None):  # @look
+    def __init__(self, model, _dataset=None):  # @look
         self.model = model
-        self.dataset = dataset
-        if self.dataset == None:
-            self.dataset = read_data_sets()
+        if _dataset:
+            self.dataset = _dataset
+        else:
+            self.dataset = dataset.read_data_sets()
         self.z = self.generate_z()
 
     def get_random_mnist(self, with_label=False):
@@ -172,4 +173,4 @@ class Sampler:
         images = []
         for i in range(len(img_data_array)):
             images.append(self.to_image(img_data_array[i]))
-        writeGif(filename, images, duration=duration)
+        images2gif.writeGif(filename, images, duration=duration)
