@@ -12,6 +12,29 @@ import numpy as np
 SOURCE_URL = "http://yann.lecun.com/exdb/mnist/"
 
 
+def read_data_sets(train_dir="MNIST_data", one_hot=False):
+    TRAIN_IMAGES = "train-images-idx3-ubyte.gz"
+    TRAIN_LABELS = "train-labels-idx1-ubyte.gz"
+    TEST_IMAGES = "t10k-images-idx3-ubyte.gz"
+    TEST_LABELS = "t10k-labels-idx1-ubyte.gz"
+    VALIDATION_SIZE = 5000
+    local_file = maybe_download(TRAIN_IMAGES, train_dir)
+    train_images = extract_images(local_file)
+    local_file = maybe_download(TRAIN_LABELS, train_dir)
+    train_labels = extract_labels(local_file, one_hot=one_hot)
+    local_file = maybe_download(TEST_IMAGES, train_dir)
+    test_images = extract_images(local_file)
+    local_file = maybe_download(TEST_LABELS, train_dir)
+    test_labels = extract_labels(local_file, one_hot=one_hot)
+
+    all_images = np.vstack((train_images, test_images))
+    all_labels = np.concatenate((train_labels, test_labels))
+
+    # data_sets = DataSet(all_images, all_labels) # train on all train+test sets 70k
+    data_sets = DataSet(train_images, train_labels)  # train only only train set 60k
+    return data_sets
+
+
 def maybe_download(filename, work_directory):
     """Download the data from Yann's website, unless it's already here."""
     if not os.path.exists(work_directory):
@@ -152,26 +175,3 @@ class DataSet(object):
         np.random.shuffle(perm)
         self._images = self._images[perm]
         self._labels = self._labels[perm]
-
-
-def read_data_sets(train_dir="MNIST_data", one_hot=False):
-    TRAIN_IMAGES = "train-images-idx3-ubyte.gz"
-    TRAIN_LABELS = "train-labels-idx1-ubyte.gz"
-    TEST_IMAGES = "t10k-images-idx3-ubyte.gz"
-    TEST_LABELS = "t10k-labels-idx1-ubyte.gz"
-    VALIDATION_SIZE = 5000
-    local_file = maybe_download(TRAIN_IMAGES, train_dir)
-    train_images = extract_images(local_file)
-    local_file = maybe_download(TRAIN_LABELS, train_dir)
-    train_labels = extract_labels(local_file, one_hot=one_hot)
-    local_file = maybe_download(TEST_IMAGES, train_dir)
-    test_images = extract_images(local_file)
-    local_file = maybe_download(TEST_LABELS, train_dir)
-    test_labels = extract_labels(local_file, one_hot=one_hot)
-
-    all_images = np.vstack((train_images, test_images))
-    all_labels = np.concatenate((train_labels, test_labels))
-
-    # data_sets = DataSet(all_images, all_labels) # train on all train+test sets 70k
-    data_sets = DataSet(train_images, train_labels)  # train only only train set 60k
-    return data_sets
