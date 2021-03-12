@@ -9,22 +9,32 @@ import urllib
 import matplotlib.pyplot as plt
 import numpy as np
 
-SOURCE_URL = "http://yann.lecun.com/exdb/mnist/"
+DATASET_MNIST = "mnist"
+DATASET_FASHION = "fashion"
+
+DIR_MNIST = f"data/{DATASET_MNIST}"
+DIR_FASHION = f"data/{DATASET_FASHION}"
+
+SAVE_MNIST = f"save/{DATASET_MNIST}"
+SAVE_FASHION = f"save/{DATASET_FASHION}"
+
+SOURCE_MNIST_URL = "http://yann.lecun.com/exdb/mnist/"
+SOURCE_FASHION_URL = "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"
 
 
-def read_data_sets(train_dir="MNIST_data", one_hot=False):
+def read_data_sets(train_dir=DIR_MNIST, one_hot=False, source_url=SOURCE_MNIST_URL):
     TRAIN_IMAGES = "train-images-idx3-ubyte.gz"
     TRAIN_LABELS = "train-labels-idx1-ubyte.gz"
     TEST_IMAGES = "t10k-images-idx3-ubyte.gz"
     TEST_LABELS = "t10k-labels-idx1-ubyte.gz"
     VALIDATION_SIZE = 5000
-    local_file = maybe_download(TRAIN_IMAGES, train_dir)
+    local_file = maybe_download(TRAIN_IMAGES, train_dir, source_url)
     train_images = extract_images(local_file)
-    local_file = maybe_download(TRAIN_LABELS, train_dir)
+    local_file = maybe_download(TRAIN_LABELS, train_dir, source_url)
     train_labels = extract_labels(local_file, one_hot=one_hot)
-    local_file = maybe_download(TEST_IMAGES, train_dir)
+    local_file = maybe_download(TEST_IMAGES, train_dir, source_url)
     test_images = extract_images(local_file)
-    local_file = maybe_download(TEST_LABELS, train_dir)
+    local_file = maybe_download(TEST_LABELS, train_dir, source_url)
     test_labels = extract_labels(local_file, one_hot=one_hot)
 
     all_images = np.vstack((train_images, test_images))
@@ -35,13 +45,13 @@ def read_data_sets(train_dir="MNIST_data", one_hot=False):
     return data_sets
 
 
-def maybe_download(filename, work_directory):
+def maybe_download(filename, work_directory, source_url=SOURCE_MNIST_URL):
     """Download the data from Yann's website, unless it's already here."""
     if not os.path.exists(work_directory):
         os.mkdir(work_directory)
     filepath = os.path.join(work_directory, filename)
     if not os.path.exists(filepath):
-        filepath, _ = urllib.urlretrieve(SOURCE_URL + filename, filepath)
+        filepath, _ = urllib.urlretrieve(source_url + filename, filepath)
         statinfo = os.stat(filepath)
         print("Succesfully downloaded", filename, statinfo.st_size, "bytes.")
     return filepath
@@ -61,13 +71,13 @@ def extract_images(filename):
             raise ValueError(
                 "Invalid magic number %d in MNIST image file: %s" % (magic, filename)
             )
-        num_images = _read32(bytestream)
-        rows = _read32(bytestream)
-        cols = _read32(bytestream)
+        num_images = _read32(bytestream)[0]
+        rows = _read32(bytestream)[0]
+        cols = _read32(bytestream)[0]
         print(num_images, rows, cols)
-        buf = bytestream.read(rows[0] * cols[0] * num_images[0])  # @look
+        buf = bytestream.read(rows * cols * num_images)
         data = np.frombuffer(buf, dtype=np.uint8)
-        data = data.reshape(num_images[0], rows[0], cols[0], 1)
+        data = data.reshape(num_images, rows, cols, 1)
         return data
 
 
@@ -89,10 +99,9 @@ def extract_labels(filename, one_hot=False):
             raise ValueError(
                 "Invalid magic number %d in MNIST label file: %s" % (magic, filename)
             )
-        num_items = _read32(bytestream)
-        buf = bytestream.read(
-            num_items[0]
-        )  # @look - https://stackoverflow.com/questions/50997928/typeerror-only-integer-scalar-arrays-can-be-converted-to-a-scalar-index-with-1d
+        # https://stackoverflow.com/questions/50997928/typeerror-only-integer-scalar-arrays-can-be-converted-to-a-scalar-index-with-1d
+        num_items = _read32(bytestream)[0]
+        buf = bytestream.read(num_items)
         labels = np.frombuffer(buf, dtype=np.uint8)
         if one_hot:
             return dense_to_one_hot(labels)
