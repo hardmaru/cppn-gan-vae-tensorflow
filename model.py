@@ -161,15 +161,17 @@ class CPPNVAE:
 
         # Launch the session
         self.sess = tf.InteractiveSession()
-        self.sess.run(tf.variables_initializer(all_variables))
 
+        # init all vars
         self.all_vars = tf.get_collection_ref(tf.GraphKeys.GLOBAL_VARIABLES)
+        self.sess.run(tf.variables_initializer(self.all_vars))
+
+        # filter to trainable vars, and include only those in the Saver
         self.trainable_vars = [
             v
             for v in self.all_vars
             if "beta1_power" not in v.name and "beta2_power" not in v.name
         ]
-
         self.saver = tf.train.Saver(var_list=self.trainable_vars, max_to_keep=50)
 
     def create_vae_loss_terms(self):
