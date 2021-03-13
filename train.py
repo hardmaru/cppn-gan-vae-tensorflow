@@ -43,13 +43,13 @@ parser.add_argument(
 )
 parser.add_argument(
     "--save_dir",
-    type=string,
+    type=str,
     default=dataset.SAVE_MNIST,
     help="output dir for model checkpoint files",
 )
 parser.add_argument(
     "--data_dir",
-    type=string,
+    type=str,
     default=dataset.DIR_MNIST,
     help="output dir for model checkpoint files",
 )
