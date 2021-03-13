@@ -7,7 +7,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from six.moves import urllib
+from six.moves.urllib.request import urlretrieve
 
 DATASET_MNIST = "mnist"
 DATASET_FASHION = "fashion"
@@ -51,7 +51,7 @@ def maybe_download(filename, work_directory, source_url=SOURCE_MNIST_URL):
         os.mkdir(work_directory)
     filepath = os.path.join(work_directory, filename)
     if not os.path.exists(filepath):
-        filepath, _ = urllib.urlretrieve(source_url + filename, filepath)
+        filepath, _ = urlretrieve(source_url + filename, filepath)
         statinfo = os.stat(filepath)
         print("Succesfully downloaded", filename, statinfo.st_size, "bytes.")
     return filepath
