@@ -4,10 +4,10 @@ modified for the purpose of cppgan demo
 """
 import gzip
 import os
-import urllib
 
 import matplotlib.pyplot as plt
 import numpy as np
+from six.moves import urllib
 
 DATASET_MNIST = "mnist"
 DATASET_FASHION = "fashion"
