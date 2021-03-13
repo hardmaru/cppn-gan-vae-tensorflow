@@ -41,7 +41,7 @@ from model import CPPNVAE
 
 mgc = get_ipython().magic
 mgc(u"matplotlib inline")
-mgc(u"run -i mnist_data.py")
+mgc(u"run -i dataset.py")
 pylab.rcParams["figure.figsize"] = (10.0, 10.0)
 
 
