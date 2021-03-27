@@ -128,7 +128,7 @@ class Sampler:
             im = im.resize(specific_size)
         im.save(filename)
 
-    def to_image(self, image_data):
+    def to_image(self, image_data, specific_size=None):
         # convert to PIL.Image format from np array (0, 1)
         img_data = np.array(1 - image_data)
         y_dim = image_data.shape[0]
@@ -143,6 +143,8 @@ class Sampler:
                 img_data.reshape((y_dim, x_dim)) * 255.0, dtype=np.uint8
             )
         im = Image.fromarray(img_data)
+        if specific_size != None:
+            im = im.resize(specific_size)
         return im
 
     def morph(
