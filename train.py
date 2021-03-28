@@ -164,9 +164,9 @@ def train(args):
                 "avg_vae_loss=",
                 "{:.6f}".format(avg_vae_loss),
             )
-            cppnvae.writer.add_summary(cppnvae.sess.run(cppnvae.summ_vae_loss), epoch)
-            cppnvae.writer.add_summary(cppnvae.sess.run(cppnvae.summ_d_loss), epoch)
-            cppnvae.writer.add_summary(cppnvae.sess.run(cppnvae.summ_g_loss), epoch)
+            cppnvae.writer.add_summary(avg_vae_loss, epoch)
+            cppnvae.writer.add_summary(avg_d_loss, epoch)
+            cppnvae.writer.add_summary(avg_q_loss, epoch)
             cppnvae.writer.flush()
 
         # save model
