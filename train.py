@@ -164,6 +164,10 @@ def train(args):
                 "avg_vae_loss=",
                 "{:.6f}".format(avg_vae_loss),
             )
+            cppnvae.writer.add_summary(cppnvae.sess.run(cppnvae.summ_vae_loss), epoch)
+            cppnvae.writer.add_summary(cppnvae.sess.run(cppnvae.summ_d_loss), epoch)
+            cppnvae.writer.add_summary(cppnvae.sess.run(cppnvae.summ_g_loss), epoch)
+            cppnvae.writer.flush()
 
         # save model
         if epoch >= 0 and epoch % checkpoint_step == 0:
@@ -172,6 +176,7 @@ def train(args):
 
         # save model one last time, under zero label to denote finish.
         cppnvae.save_model(checkpoint_path, 0)
+        cppnvae.writer.close()
 
 
 if __name__ == "__main__":

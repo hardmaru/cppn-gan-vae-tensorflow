@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime
 
 import numpy as np
 import tensorflow as tf
@@ -158,7 +159,9 @@ class CPPNVAE:
             self.vae_opt = tf.train.AdamOptimizer(
                 self.learning_rate_vae, beta1=self.beta1
             ).minimize(self.vae_loss, var_list=self.vae_vars)
+        self.init()
 
+    def init(self):
         # Launch the session
         self.sess = tf.InteractiveSession()
 
@@ -173,6 +176,10 @@ class CPPNVAE:
             if "beta1_power" not in v.name and "beta2_power" not in v.name
         ]
         self.saver = tf.train.Saver(var_list=self.trainable_vars, max_to_keep=50)
+
+        # initialize writer for tensorboard logs
+        self.logdir = "logs/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+        self.writer = tf.summary.FileWriter(self.logdir)
 
     def create_vae_loss_terms(self):
         # The loss is composed of two terms:
@@ -205,6 +212,7 @@ class CPPNVAE:
         self.vae_loss = (
             tf.reduce_mean(reconstr_loss + latent_loss) / self.n_points
         )  # average over batch and pixel
+        self.summ_vae_loss = tf.summary.scalar("vae_loss", self.vae_loss)
 
     def create_gan_loss_terms(self):
         # Define loss function and optimiser
@@ -218,6 +226,10 @@ class CPPNVAE:
         self.g_loss = 1.0 * binary_cross_entropy_with_logits(
             tf.ones_like(self.D_wrong), self.D_wrong
         )
+        self.summ_d_loss = tf.summary.scalar("d_loss", self.d_loss)
+        self.summ_d_loss_fake = tf.summary.scalar("d_loss_fake", self.d_loss_fake)
+        self.summ_d_loss_real = tf.summary.scalar("d_loss_real", self.d_loss_real)
+        self.summ_g_loss = tf.summary.scalar("g_loss", self.g_loss)
 
     def coordinates(self, x_dim=32, y_dim=32, scale=1.0):
         n_pixel = x_dim * y_dim
