@@ -90,7 +90,7 @@ def train(args):
     save_dir = args.save_dir
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
-    with open(os.path.join(save_dir, "config.pkl"), "w") as f:
+    with open(os.path.join(save_dir, "config.pkl"), "wb") as f:
         cPickle.dump(args, f)
     checkpoint_path = os.path.join(save_dir, "model.ckpt")
 
