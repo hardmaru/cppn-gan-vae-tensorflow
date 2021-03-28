@@ -183,7 +183,7 @@ def train(args):
 
         # save model one last time, under zero label to denote finish.
         cppnvae.save_model(checkpoint_path, 0)
-        cppnvae.writer.close()
+    cppnvae.writer.close()
 
 
 if __name__ == "__main__":
