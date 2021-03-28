@@ -173,7 +173,7 @@ def train(args):
                         tf.Summary.Value(tag=key, simple_value=metrics[key]),
                     ]
                 )
-                cppnvae.writer.add_summary(summary, global_step)
+                cppnvae.writer.add_summary(summary, epoch)
             cppnvae.writer.flush()
 
         # save model
