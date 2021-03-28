@@ -164,9 +164,16 @@ def train(args):
                 "avg_vae_loss=",
                 "{:.6f}".format(avg_vae_loss),
             )
-            cppnvae.writer.add_summary(avg_vae_loss, epoch)
-            cppnvae.writer.add_summary(avg_d_loss, epoch)
-            cppnvae.writer.add_summary(avg_q_loss, epoch)
+            metrics = dict(
+                avg_d_loss=avg_d_loss, avg_q_loss=avg_q_loss, avg_vae_loss=avg_vae_loss
+            )
+            for key in sorted(metrics):
+                summary = tf.Summary(
+                    value=[
+                        tf.Summary.Value(tag=key, simple_value=metrics[key]),
+                    ]
+                )
+                cppnvae.writer.add_summary(summary, global_step)
             cppnvae.writer.flush()
 
         # save model
