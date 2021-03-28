@@ -4,6 +4,7 @@ import time
 
 import numpy as np
 import tensorflow as tf
+from six import BytesIO, StringIO
 from six.moves import cPickle
 
 import dataset
@@ -72,6 +73,22 @@ usage (in jupyter):
 """
 
 
+def to_image(data):
+    # convert to PIL.Image format from np array (0, 1)
+    img_data = np.array(1 - data)
+    y_dim = image_data.shape[0]
+    x_dim = image_data.shape[1]
+    c_dim = self.model.c_dim
+    if c_dim > 1:
+        img_data = np.array(
+            img_data.reshape((y_dim, x_dim, c_dim)) * 255.0, dtype=np.uint8
+        )
+    else:
+        img_data = np.array(img_data.reshape((y_dim, x_dim)) * 255.0, dtype=np.uint8)
+    im = Image.fromarray(img_data)
+    return im
+
+
 def train(args):
     learning_rate = args.learning_rate
     learning_rate_d = args.learning_rate_d
@@ -113,6 +130,8 @@ def train(args):
 
     counter = 0
 
+    sample_img = None
+
     # Training cycle
     for epoch in range(training_epochs):
         avg_d_loss = 0.0
@@ -123,6 +142,29 @@ def train(args):
         # Loop over all batches
         for i in range(total_batch):
             batch_images = mnist_dataset.next_batch(batch_size)
+            if not sample_img:
+                sample_data = batch_images[0]
+                print(sample_data)
+                sample_img = to_image(sample_data)
+                print(sample_img)
+                # Write the image to a string
+                try:
+                    s = StringIO()
+                    sample_img.save(s, "PNG")
+                except:
+                    s = BytesIO()
+                    sample_img.save(s, "PNG")
+
+                # Create an Image object
+                img_sum = tf.Summary.Image(
+                    encoded_image_string=s.getvalue(),
+                    height=img.shape[0],
+                    width=img.shape[1],
+                )
+                cppnvae.writer.add_summary(
+                    tf.Summary(value=tf.Summary.Value(tag="sample_img", image=img_sum))
+                )
+                cppnvae.writer.flush()
 
             d_loss, g_loss, vae_loss, n_operations = cppnvae.partial_train(batch_images)
 
