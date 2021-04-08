@@ -45,6 +45,7 @@ class CPPNVAE:
         keep_prob=1.0,
         df_dim=24,
         model_name="cppnvae",
+        logdir="logs",
     ):
         """
 
@@ -178,8 +179,6 @@ class CPPNVAE:
         self.saver = tf.train.Saver(var_list=self.trainable_vars, max_to_keep=50)
 
         # initialize writer for tensorboard logs
-        self.logdir = "logs/"
-        # self.logdir = "logs/" + datetime.now().strftime("%Y%m%d-%H%M%S")
         self.writer = tf.summary.FileWriter(self.logdir)
 
     def create_vae_loss_terms(self):

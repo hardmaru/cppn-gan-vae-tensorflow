@@ -4,6 +4,7 @@ import time
 
 import numpy as np
 import tensorflow as tf
+from PIL import Image
 from six import BytesIO, StringIO
 from six.moves import cPickle
 
@@ -73,12 +74,12 @@ usage (in jupyter):
 """
 
 
-def to_image(data):
+def to_image(data, c_dim):
     # convert to PIL.Image format from np array (0, 1)
     img_data = np.array(1 - data)
-    y_dim = image_data.shape[0]
-    x_dim = image_data.shape[1]
-    c_dim = self.model.c_dim
+    y_dim = img_data.shape[0]
+    x_dim = img_data.shape[1]
+    c_dim = c_dim
     if c_dim > 1:
         img_data = np.array(
             img_data.reshape((y_dim, x_dim, c_dim)) * 255.0, dtype=np.uint8
@@ -121,6 +122,7 @@ def train(args):
         learning_rate_vae=learning_rate_vae,
         beta1=beta1,
         keep_prob=keep_prob,
+        logdir=save_dir,
     )
 
     # load previously trained model if appilcable
@@ -144,25 +146,49 @@ def train(args):
             batch_images = mnist_dataset.next_batch(batch_size)
             if not sample_img:
                 sample_data = batch_images[0]
-                print(sample_data)
-                sample_img = to_image(sample_data)
-                print(sample_img)
+                print(sample_data.shape)
+                sample_batch = np.asarray([sample_data] * batch_size)
+                print(sample_batch.shape)
+                sample_img = to_image(sample_data, cppnvae.c_dim)
+
+                sample_z = cppnvae.encode(
+                    np.reshape(sample_batch, [batch_size] + list(sample_data.shape))
+                )
+                print(sample_z)
+                reconstructed_data = cppnvae.generate(sample_z, 512, 512, 8.0)[0]
+                reconstructed_img = to_image(reconstructed_data, cppnvae.c_dim)
                 # Write the image to a string
                 try:
                     s = StringIO()
+                    r = StringIO()
                     sample_img.save(s, "PNG")
+                    reconstructed_img.save(r, "PNG")
                 except:
                     s = BytesIO()
+                    r = BytesIO()
                     sample_img.save(s, "PNG")
+                    reconstructed_img.save(r, "PNG")
 
                 # Create an Image object
-                img_sum = tf.Summary.Image(
+                sample_summ = tf.Summary.Image(
                     encoded_image_string=s.getvalue(),
-                    height=img.shape[0],
-                    width=img.shape[1],
+                    height=sample_img.height,
+                    width=sample_img.width,
+                )
+                reconstructed_summ = tf.Summary.Image(
+                    encoded_image_string=r.getvalue(),
+                    height=reconstructed_img.height,
+                    width=reconstructed_img.width,
                 )
                 cppnvae.writer.add_summary(
-                    tf.Summary(value=tf.Summary.Value(tag="sample_img", image=img_sum))
+                    tf.Summary(
+                        value=[
+                            tf.Summary.Value(tag="sample_img", image=sample_summ),
+                            tf.Summary.Value(
+                                tag="reconstructed_img", image=reconstructed_summ
+                            ),
+                        ]
+                    )
                 )
                 cppnvae.writer.flush()
 

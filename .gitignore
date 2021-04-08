@@ -3,3 +3,4 @@ venv*
 .DS_Store
 __pycache__/
 .vscode/.ropeproject/
+.DS_Store
